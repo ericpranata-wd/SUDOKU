@@ -1,12 +1,13 @@
-// perbaiki temp bautafill penggunaan nya, arsitektur baru di ubah
+// perbaiki temp boutaFill penggunaan nya, arsitektur baru di ubah
 
+import 'dart:collection';
 import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 
 List<List<int?>> defineListBlueprint() {
-  List<List<int>> temp = [];
+  List<List<int?>> temp = [];
   for (int i = 0; i < 9; i++) {
     temp.add([]);
     for (var j = 0; j < 9; j++) {
@@ -101,7 +102,9 @@ class Kosong {
   List<List<int?>> list;
   List<int> avilableX;
   List<List<int>> avilableY;
-  Kosong(this.list, this.avilableX, this.avilableY);
+  int counter = 0;
+  List<List<int>> queue = [];
+  Kosong(this.list, this.avilableX, this.avilableY, );
 }
 
 class _MainAppState extends State<MainApp> {
@@ -220,57 +223,212 @@ class _MainAppState extends State<MainApp> {
     }
   }
 
-  int? checker() {
+  List<int>? checker() {
     for (var i = 0; i < 9; i++) {
       for (var j = 0; j < 9; j++) {
         if (cells[i][j].possible.length <= 1 && cells[i][j].answer == "") {
-          print((9 * i) + j);
-          return (9 * i) + j;
+          print([i,j]);
+          return [i,j];
         }
       }
     }
     for (var i = 0; i < 9; i++) {
       for (int j = 0; j < 9; j++) {
         for (int k = 0; k < 9; k++) {
-          // check for every single number
+          // check for every single number in a box relation
         }
       }
     }
     return null;
   }
 
+  List<dynamic>? checker2(int x,int y){
+    List<List<int>> queue = [];
+    int a = (x ~/ 3)*3;
+    int b = (y ~/ 3)*3;
+    String number = cells[x][y].answer;
+    List<int>? retcoordinate;
+    if (true) {
+      // possible length for horizontal and vertical line
+      for (var i = 0; i < 9; i++) {
+        if (cells[x][i].answer=="" && queue.contains([x,i]) == false && cells[x][i].possible.length==1) {
+          print('line possible vertical 2');
+          queue.add([x,i]);
+        }
+        if (cells[i][y].answer=="" && queue.contains([i,y]) == false && cells[i][y].possible.length==1) {
+          print('line possible horizontal 2');
+          queue.add([i,y]);
+        }
+      }
+      // possible length for box
+      for (var i = a; i < a+3; i++) {
+        for (int j = b; j<b+3; b++){
+          print("x = $i");
+          print("y = $j");
+          if (cells[i][j].answer == "" && queue.contains([i,j]) == false && cells[i][j].possible.length==1) {
+            print("box possible 2");
+            queue.add([i,j]);
+          }
+        }
+      }
+      if (queue.isNotEmpty) {
+        return queue;
+      }
+    }
+
+    if (true) {
+      // number possibility for horizontal and vertical line
+
+      // check wich number is not there yet
+      // i think i could use like array for that
+
+
+      for (var i = 0; i < 9; i++) {
+        if (cells[x][i].answer=="" && queue.contains([x,i]) == false && cells[x][i].possible.contains(k)) {
+          print('number possible vertical 2');
+          queue.add([x,i]);
+        }
+        if (cells[i][y].answer=="" && queue.contains([i,y]) == false && cells[i][y].possible.contains(k)) {
+          print('number possible horizontal 2');
+          queue.add([i,y]);
+        }
+      }
+      // possible length for box
+      for (var i = a; i < a+3; i++) {
+        for (int j = b; j<b+3; b++){
+          print("x = $i");
+          print("y = $j");
+          if (cells[i][j].answer == "" && queue.contains([i,j]) == false && cells[i][j].possible.contains(k)) {
+            print("number possible box 2");
+            queue.add([i,j]);
+          }
+        }
+      }
+      if (queue.isNotEmpty) {
+        return queue;
+      }
+    }
+
+    if (true){
+      for (int i = 0; i < 9; i=i+3) {
+        // print("atas");
+        int count=0;
+        // print("i = $i");
+        // print("a = $a");
+        // print("b = $b");
+        for (int j = a; j < a+3; j++) {
+          if (i==b){
+            // print('skip, x = $j, y = $i');
+            break;
+          }
+          for (int k = i; k < i+3; k++) {
+            // print("x = $j");
+            // print("y = $k");
+            if (cells[j][k].answer==""){
+              if (cells[j][k].possible.contains(number)) {
+                count++;
+                retcoordinate=[j,k];
+              }
+            }
+          }
+        }
+        if(count==1){
+          print("box checker2, vertikal");
+          cells[retcoordinate![0]][retcoordinate[1]].possible=[number];
+          return retcoordinate;
+        }
+        count=0;
+        // print("bawah");
+        for (var j = i; j < i + 3; j++) {
+          if (i==a){
+            // print('skip, x = $i, y = $b');
+            break;
+          }
+          for (var k = b; k < b+3; k++) {
+            // print("x = $j");
+            // print("y = $k");
+            if (cells[j][k].answer==""){
+              if (cells[j][k].possible.contains(number)){
+                count++;
+                retcoordinate=[j,k];
+              }
+            }
+          }
+        }
+        if (count==1) {
+          print("box checker2, horizontal");
+          cells[retcoordinate![0]][retcoordinate[1]].possible=[number];
+          return retcoordinate;
+        }
+      }
+    }
+    // print("");
+    // print("");
+    // print("");
+    return null;
+  }
+
+  List<int>? next;
+
   void createpuzzle() {
     reset();
-    Kosong bautafill = Kosong(
+    Kosong boutaFill = Kosong(
       List.from(startBlueprint),
       List.generate(9, (index) => index),
-      List.generate(9, (index1) => List.generate(9, (index2) => index2)),
+      List.generate(9, (index1) => List.generate(9, (index2) => index2))
     );
-    while (bautafill.avilableX.isNotEmpty) {
+    while (boutaFill.avilableX.isNotEmpty) {
+      
+    }
+  }
+  Kosong boutaFill = Kosong(
+    List.from(startBlueprint),
+    List.generate(9, (index) => index),
+    List.generate(9, (index1) => List.generate(9, (index2) => index2))
+  );
+  void steppuzzle() {
       dynamic tempRandom;
       late int x;
       late int y;
-      tempRandom = checker();
+      if (next != null){
+        tempRandom=next;
+        next=null;
+      }else if(boutaFill.queue.isNotEmpty){
+        tempRandom = boutaFill.queue[0];
+        boutaFill.queue.removeAt(0);
+      }else{
+        tempRandom = checker();
+      }
       // ignore: prefer_conditional_assignment
       if (tempRandom == null) {
-        // length nya gaboleh empty gasih? biar x dan y nya .... :v
-        x = bautafill.avilableX[Random().nextInt(bautafill.avilableX.length)];
-        y = bautafill.avilableY[x][Random().nextInt(bautafill.avilableY[x].length)];
-        tempRandom = [x, y];
+        x = boutaFill.avilableX[Random().nextInt(boutaFill.avilableX.length)];
+        y = boutaFill.avilableY[x][Random().nextInt(boutaFill.avilableY[x].length)];
+      }else{
+        x=tempRandom[0];
+        y=tempRandom[1];
       }
       // isi answer dengan koordinat yg sudah di dapat
       fillrandom(x, y);
       // set variabel agar tidak di pakai atau terpilih kembali
-      bautafill.list[tempRandom[0]][tempRandom[1]] = null;
-      for (var i = 0; i < 9; i++) {
-        if (bautafill.list[tempRandom[0]].isEmpty) {
-          bautafill.list.removeAt(tempRandom);
-        }
+      try {
+        boutaFill.list[x][y] = null;
+      } catch (e) {
+        print(e);
       }
-    }
+      boutaFill.avilableY[x].remove(y);
+      if (boutaFill.avilableY[x].isEmpty){
+        boutaFill.avilableX.remove(x);
+      }
+      // pengecekan ke dua (mungkin mempercepat pengecekan) dilakukan untuk dapat koordinat next
+      dynamic temp = checker2(x, y);
+      if (temp.runtimeType==List<int>){
+        next = temp;
+      } else if(temp.runtimeType==List<List<int>>){
+        boutaFill.queue.addAll(temp);
+      }else if (temp.runtimeType != Null){
+        print(temp.runtimeType);
+      }
   }
-
-  void steppuzzle() {}
 
   @override
   Widget build(BuildContext context) {
