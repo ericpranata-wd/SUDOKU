@@ -352,20 +352,29 @@ class _MainAppState extends State<MainApp> {
               vertiCount++;
             }
           }
+          int run = 2;
+          List<int> cor = [horiCor,vertiCor];
+          if (vertiCount==countC){
+            print("multi possible killer vertical");
+            run = 0;
+          }
           if (horiCount==countC){
             // kill possibility
             // after finished, call checker2 again or smt
-            print("multi possible killer");
+            print("multi possible killer horizontal");
+            run = 1;
+          }
+          if (run!=2) {
             for (var i = 0; i < 9; i++) {
-              if (i>=horiCor && i<=horiCor+2){
+              if (i>=cor[run] && i<=cor[run]+2){
                 // skip, but i dont know how yet :v
-                // on python its continue or smt
+                // on python its continue or smt (it is continue :v)
+                continue;
               }
-              for (int j=0; j < 9; j++){
-                if (j>=vertiCor && j<=vertiCor+2){
-
-                }
-                cells[i][j].possible.remove(k);
+              if (run == 0){
+                cells[tempco[0]][i].possible.remove(k);
+              }else if (run == 1){
+                cells[i][tempco[1]].possible.remove(k);
               }
             }
           }
