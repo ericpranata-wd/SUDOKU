@@ -102,9 +102,12 @@ class Kosong {
   List<List<int?>> list;
   List<int> avilableX;
   List<List<int>> avilableY;
+  List<List<String>> avilableYForEach;
+  List<List<String>> avilableXForEach;
+  List<List<List<String>>> avilableBox;
   int counter = 0;
   List<List<int>> queue = [];
-  Kosong(this.list, this.avilableX, this.avilableY, );
+  Kosong(this.list, this.avilableX, this.avilableY, this.avilableXForEach, this.avilableYForEach, this.avilableBox );
 }
 
 class _MainAppState extends State<MainApp> {
@@ -242,7 +245,7 @@ class _MainAppState extends State<MainApp> {
     return null;
   }
 
-  List<dynamic>? checker2(int x,int y){
+  List<dynamic>? checker2(int x,int y, Kosong boutaFill){
     List<List<int>> queue = [];
     int a = (x ~/ 3)*3;
     int b = (y ~/ 3)*3;
@@ -262,11 +265,11 @@ class _MainAppState extends State<MainApp> {
       }
       // possible length for box
       for (var i = a; i < a+3; i++) {
-        for (int j = b; j<b+3; b++){
-          print("x = $i");
-          print("y = $j");
+        for (int j = b; j<b+3; j++){
           if (cells[i][j].answer == "" && queue.contains([i,j]) == false && cells[i][j].possible.length==1) {
             print("box possible 2");
+            print("x = $i");
+            print("y = $j");
             queue.add([i,j]);
           }
         }
@@ -279,29 +282,96 @@ class _MainAppState extends State<MainApp> {
     if (true) {
       // number possibility for horizontal and vertical line
 
-      // check wich number is not there yet
-      // i think i could use like array for that
+      // check wich number is not there yet  <done>
+      // i think i could use like array for that  <done>
 
 
-      for (var i = 0; i < 9; i++) {
-        if (cells[x][i].answer=="" && queue.contains([x,i]) == false && cells[x][i].possible.contains(k)) {
-          print('number possible vertical 2');
-          queue.add([x,i]);
+      // make it count on the true if and add some logic  <done>
+      List<String> tempList = [];
+      tempList.addAll(boutaFill.avilableXForEach[y]);
+      tempList.addAll(boutaFill.avilableYForEach[x]);
+      int countX = 0;
+      int countY = 0;
+      int countC = 0;
+      List<int> tempco = [];
+      for (String k in boutaFill.avilableXForEach[y]) {
+        countX=0;
+        for (var i = 0; i < 9; i++) {
+          if (cells[x][i].answer=="" && cells[x][i].possible.contains(k)) {
+            countX++;
+            tempco = [x,i];
+          }
         }
-        if (cells[i][y].answer=="" && queue.contains([i,y]) == false && cells[i][y].possible.contains(k)) {
-          print('number possible horizontal 2');
-          queue.add([i,y]);
+        if (countX==1 && queue.contains(tempco) == false){
+          print("countX on $tempco for $k");
+          cells[tempco[0]][tempco[1]].possible = [k];
+          queue.add(tempco);
         }
       }
-      // possible length for box
-      for (var i = a; i < a+3; i++) {
-        for (int j = b; j<b+3; b++){
-          print("x = $i");
-          print("y = $j");
-          if (cells[i][j].answer == "" && queue.contains([i,j]) == false && cells[i][j].possible.contains(k)) {
-            print("number possible box 2");
-            queue.add([i,j]);
+      for (String k in boutaFill.avilableYForEach[x]) {
+        countY=0;
+        for (var i = 0; i < 9; i++) {
+          if (cells[i][y].answer=="" && cells[i][y].possible.contains(k)) {
+            countY++;
+            tempco = [i,y];
           }
+        }
+        if (countY==1 && queue.contains(tempco) == false){
+          print("countY on $tempco for $k");
+          cells[tempco[0]][tempco[1]].possible = [k];
+          queue.add(tempco);
+        }
+      }
+      // number possibility for box
+      for (String k in boutaFill.avilableBox[x~/3][y~/3]) {
+        for (var i = a; i < a+3; i++) {
+          for (int j = b; j<b+3; j++){
+            if (cells[i][j].answer == "" && queue.contains([i,j]) == false && cells[i][j].possible.contains(k)) {
+              countC++;
+              tempco = [i,j];
+            }
+          }
+        }
+        if (countC==1) {
+          print("countC on $tempco for $k");
+          cells[tempco[0]][tempco[1]].possible = [k];
+          queue.add(tempco);
+        } else if(countC <= 3 && countC > 1){
+          // check horizontal and vertical, if its on the same line or thingy, then its fixed. idea of using the tempco, but rebuilt a lot, combined with seeing the tempc coordinate to see the horizontal and vertical coordinate
+          // another idea, make the if to be one like if countc <=3 and >0 or mybe for in in range 3 for that
+          int horiCount = 0;
+          int vertiCount = 0;
+          int horiCor = ((tempco[0]~/3)*3);
+          // for example, x=3, then x=3 or x=4 then x=3
+          int vertiCor = ((tempco[1]~/3)*3);
+          for (int i = 0; i < 3; i++) {
+            if(cells[horiCor+i][tempco[1]].possible.contains(k)){
+              horiCount++;
+            }
+            if(cells[tempco[0]][vertiCor+i].possible.contains(k)){
+              vertiCount++;
+            }
+          }
+          if (horiCount==countC){
+            // kill possibility
+            // after finished, call checker2 again or smt
+            print("multi possible killer");
+            for (var i = 0; i < 9; i++) {
+              if (i>=horiCor && i<=horiCor+2){
+                // skip, but i dont know how yet :v
+                // on python its continue or smt
+              }
+              for (int j=0; j < 9; j++){
+                if (j>=vertiCor && j<=vertiCor+2){
+
+                }
+                cells[i][j].possible.remove(k);
+              }
+            }
+          }
+
+        } else if(countC == 3){
+
         }
       }
       if (queue.isNotEmpty) {
@@ -364,7 +434,7 @@ class _MainAppState extends State<MainApp> {
     }
     // print("");
     // print("");
-    // print("");
+    print("");
     return null;
   }
 
@@ -375,7 +445,10 @@ class _MainAppState extends State<MainApp> {
     Kosong boutaFill = Kosong(
       List.from(startBlueprint),
       List.generate(9, (index) => index),
-      List.generate(9, (index1) => List.generate(9, (index2) => index2))
+      List.generate(9, (index1) => List.generate(9, (index2) => index2)),
+      List.generate(9, (index1) => List.generate(9, (index2) => "${index2+1}")),
+      List.generate(9, (index1) => List.generate(9, (index2) => "${index2+1}")),
+      List.generate(3, (index1) => List.generate(3, (index2) => List.generate(9, (index) => "${index+1}")))
     );
     while (boutaFill.avilableX.isNotEmpty) {
       
@@ -384,9 +457,14 @@ class _MainAppState extends State<MainApp> {
   Kosong boutaFill = Kosong(
     List.from(startBlueprint),
     List.generate(9, (index) => index),
-    List.generate(9, (index1) => List.generate(9, (index2) => index2))
+      List.generate(9, (index1) => List.generate(9, (index2) => index2)),
+      List.generate(9, (index1) => List.generate(9, (index2) => "${index2+1}")),
+      List.generate(9, (index1) => List.generate(9, (index2) => "${index2+1}")),
+      List.generate(3, (index1) => List.generate(3, (index2) => List.generate(9, (index) => "${index+1}")))
   );
-  void steppuzzle() {
+  void steppuzzle(
+    
+  ) {
       dynamic tempRandom;
       late int x;
       late int y;
@@ -415,12 +493,16 @@ class _MainAppState extends State<MainApp> {
       } catch (e) {
         print(e);
       }
-      boutaFill.avilableY[x].remove(y);
+      int value=int.parse(cells[x][y].answer);
+      boutaFill.avilableY[x].remove(value);
+      boutaFill.avilableXForEach[y].remove(value);
+      boutaFill.avilableYForEach[x].remove(value);
+      boutaFill.avilableBox[x~/3][y~/3].remove(value);
       if (boutaFill.avilableY[x].isEmpty){
         boutaFill.avilableX.remove(x);
       }
       // pengecekan ke dua (mungkin mempercepat pengecekan) dilakukan untuk dapat koordinat next
-      dynamic temp = checker2(x, y);
+      dynamic temp = checker2(x, y, boutaFill);
       if (temp.runtimeType==List<int>){
         next = temp;
       } else if(temp.runtimeType==List<List<int>>){
