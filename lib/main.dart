@@ -110,7 +110,30 @@ class Kosong {
   List<List<List<String>>> avilableBox;
   int counter = 0;
   List<List<int>> queue = [];
+  List<BackTrack> backTrack = [];
+  List<BackTrackVersion2> backtrackversion2 = [];
   Kosong(this.list, this.avilableX, this.avilableY, this.avilableXForEach, this.avilableYForEach, this.avilableBox );
+}
+
+class BackTrack {
+  String name = "unknown";
+  List<int> coordinate;
+  List<String> possible;
+  List<BackTrackChild> list = [];
+  BackTrack(this.name, this.coordinate, this.possible);
+}
+
+class BackTrackChild {
+  String name = "child";
+  List<int> coordinate;
+  List<String> possible;
+  BackTrackChild(this.coordinate, this.possible);
+}
+
+class BackTrackVersion2 {
+  List<List<Cells>> table = [];
+  List<List<int>> queue = [];
+  BackTrackVersion2(this.table, this.queue);
 }
 
 class _MainAppState extends State<MainApp> {
@@ -255,6 +278,8 @@ class _MainAppState extends State<MainApp> {
     return null;
   }
 
+  
+
   List<dynamic>? checker2(int x,int y, Kosong boutaFill){
     List<List<int>> queue = boutaFill.queue;
     int a = (x ~/ 3)*3;
@@ -286,7 +311,8 @@ class _MainAppState extends State<MainApp> {
           }
         }
         if(count==1 && queue.contains(retcoordinate) == false){
-          print("box checker, vertikal");
+          print("box checker, vertical");
+          boutaFill.backTrack.add(BackTrack("box checker, vertical", retcoordinate!, cells[retcoordinate[0]][retcoordinate[1]].possible));
           cells[retcoordinate![0]][retcoordinate[1]].possible=[number];
           queue.add(retcoordinate);
         }
@@ -310,6 +336,7 @@ class _MainAppState extends State<MainApp> {
         }
         if (count==1 && queue.contains(retcoordinate)== false) {
           print("box checker, horizontal");
+          boutaFill.backTrack.add(BackTrack("box checker, horizontal", retcoordinate!, cells[retcoordinate[0]][retcoordinate[1]].possible));
           cells[retcoordinate![0]][retcoordinate[1]].possible=[number];
           queue.add(retcoordinate);
         }
@@ -324,14 +351,17 @@ class _MainAppState extends State<MainApp> {
 
 
       
-      // i dont know why but the queue.contains == false is not working lik it should work
+      // i dont know why but the queue.contains == false is not working like it should work
+      // i would just check on it from the steppuzzle (temporalily solution i think)
       for (var i = 0; i < 9; i++) {
         if (cells[x][i].answer=="" && queue.contains([x,i]) == false && cells[x][i].possible.length==1) {
           print('line possible vertical one possibility');
+          boutaFill.backTrack.add(BackTrack("line possible vertical one possibility", [x,i], cells[x][i].possible));
           queue.add([x,i]);
         }
         if (cells[i][y].answer=="" && queue.contains([i,y]) == false && cells[i][y].possible.length==1) {
           print('line possible horizontal one possibility');
+          boutaFill.backTrack.add(BackTrack("line possible horizontal one possibility", [i,y], cells[i][y].possible));
           queue.add([i,y]);
         }
       }
@@ -342,23 +372,13 @@ class _MainAppState extends State<MainApp> {
             print("box possible one possibility");
             print("x = $i");
             print("y = $j");
+            boutaFill.backTrack.add(BackTrack("box possible one possibility", [i,j], cells[i][j].possible));
             queue.add([i,j]);
           }
         }
       }
     }
     
-    if (queue.isNotEmpty) {
-      return queue;
-    }
-
-
-
-
-
-
-
-
     // need some sirious checking on this one <done all of it>
     if (true) {
       // number possibility for horizontal and vertical line
@@ -382,6 +402,7 @@ class _MainAppState extends State<MainApp> {
         }
         if (countX==1 && queue.contains(tempco) == false){
           print("number possibile x on $tempco for $k");
+          boutaFill.backTrack.add(BackTrack("number possibile x on $tempco for $k", tempco, cells[tempco[0]][tempco[1]].possible));
           cells[tempco[0]][tempco[1]].possible = [k];
           queue.add(tempco);
         }
@@ -396,6 +417,7 @@ class _MainAppState extends State<MainApp> {
         }
         if (countY==1 && queue.contains(tempco) == false){
           print("number possibile y on $tempco for $k");
+          boutaFill.backTrack.add(BackTrack("number possibile y on $tempco for $k", tempco, cells[tempco[0]][tempco[1]].possible));
           cells[tempco[0]][tempco[1]].possible = [k];
           queue.add(tempco);
         }
@@ -412,9 +434,10 @@ class _MainAppState extends State<MainApp> {
         }
         if (countC==1 && queue.contains(tempco) == false) {
           print("number possible Box on $tempco for $k");
+          boutaFill.backTrack.add(BackTrack("number possibile Box on $tempco for $k", tempco, cells[tempco[0]][tempco[1]].possible));
           cells[tempco[0]][tempco[1]].possible = [k];
           queue.add(tempco);
-        } else if(countC == 3 && countC == 2){
+        } else if(countC == 3 || countC == 2){
           // check horizontal and vertical, if its on the same line or thingy, then its fixed. idea of using the tempco, but rebuilt a lot, combined with seeing the tempc coordinate to see the horizontal and vertical coordinate
           // another idea, make the if to be one like if countc <=3 and >0 or mybe for in in range 3 for that
           int horiCount = 0;
@@ -433,6 +456,7 @@ class _MainAppState extends State<MainApp> {
           /// 2 = nothing fit, no possibility to kill, 0 = vertically, 1 = horizontally
           int run = 2;
           int? boundriesBox;
+          BackTrack tempBackTrack = BackTrack("double eliminator", tempco, cells[tempco[0]][tempco[1]].possible);
           if (vertiCount==countC){
             // vertically, like on x = 3, [3,6], [3,8] so need to lock the x position wich is 3
             print("Double eliminator vertical for $k");
@@ -455,12 +479,15 @@ class _MainAppState extends State<MainApp> {
                 continue;
               }
               if (run == 0){
+                tempBackTrack.list.add(BackTrackChild([tempco[0],i], cells[tempco[0]][i].possible));
                 cells[tempco[0]][i].possible.remove(k);
               }else if (run == 1){
+                tempBackTrack.list.add(BackTrackChild([i,tempco[1]], cells[i][tempco[1]].possible));
                 cells[i][tempco[1]].possible.remove(k);
               }
             }
           }
+          boutaFill.backTrack.add(tempBackTrack);
         }
       }
       if (queue.isNotEmpty) {
@@ -500,23 +527,40 @@ class _MainAppState extends State<MainApp> {
     dynamic tempRandom;
     late int x;
     late int y;
-    String corMotherLand = "";
+    String name = "";
+    bool notqueue= true;
+    // String corMotherLand = "";
     if (next != null){
       tempRandom=next;
+      name = "next";
       next=null;
     }else if(boutaFill.queue.isNotEmpty){
-      tempRandom = boutaFill.queue[0];
-      boutaFill.queue.removeAt(0);
+      notqueue = false;
+      do {
+        tempRandom = boutaFill.queue[0];
+        boutaFill.queue.removeAt(0);
+      } while (cells[tempRandom[0]][tempRandom[1]].answer != "" && boutaFill.queue.isNotEmpty);
+      // jika do while tidak menerima queue koordinat yang sesuai, maka lanjut ke checker
+      if (cells[tempRandom[0]][tempRandom[1]].answer != ""){
+        tempRandom = null;
+        name = "checker 1, not checker 2";
+        tempRandom = checker();
+      }
     }else{
+      name = "checker 1, not checker 2";
       tempRandom = checker();
     }
     // ignore: prefer_conditional_assignment
     if (tempRandom == null) {
+      name = "random";
       x = boutaFill.avilableX[Random().nextInt(boutaFill.avilableX.length)];
       y = boutaFill.avilableY[x][Random().nextInt(boutaFill.avilableY[x].length)];
     }else{
       x=tempRandom[0];
       y=tempRandom[1];
+    }
+    if (notqueue){
+      boutaFill.backTrack.add(BackTrack(name, [x,y], cells[x][y].possible));
     }
 
     print("x = $x    y = $y");
@@ -525,7 +569,26 @@ class _MainAppState extends State<MainApp> {
       print("its wrong somewhere");
     }
 
-
+    // problem, the list form did good job, but only on outer list, the iner list still in the form of a pointer not a copy
+    List<List<Cells>> cellsCopy = [];
+    List<Cells> insideCopy = [];
+    for (var element in cells) {
+      insideCopy = [];
+      for (var element2 in element) {
+        Cells temp = Cells();
+        temp.answer=element2.answer;
+        temp.chosen=element2.chosen;
+        temp.possible=List.from(element2.possible);
+        temp.show=element2.show;
+        insideCopy.add(temp);
+      }
+      cellsCopy.add(List.from(insideCopy));
+    }
+    List<List<int>> queueCopy = [];
+    for (var element in boutaFill.queue) {
+      queueCopy.add(List.from(element));
+    }
+    boutaFill.backtrackversion2.add(BackTrackVersion2(List.from(cellsCopy), List.from(queueCopy)));
     // isi answer dengan koordinat yg sudah di dapat
     fillrandom(x, y);
     // set variabel agar tidak di pakai atau terpilih kembali
@@ -557,11 +620,28 @@ class _MainAppState extends State<MainApp> {
     // for (var i in boutaFill.avilableY) {
     //   print("$i");
     // }
+    // print("boutaFill.backTrack");
+    // for (BackTrack element in boutaFill.backTrack) {
+    //   print("name = ${element.name}      coordinate = ${element.coordinate}");
+    //   print(element.list);
+    //   if (element.list==[]) {
+    //   }
+    // }
     print(boutaFill.queue);
     print("");
   }
 
   testing(){
+  }
+
+  undo(Kosong boutaFill){
+    print("${boutaFill.backTrack.last.name}");
+    boutaFill.backTrack.remove(boutaFill.backTrack.last);
+    setState(() {
+      cells=boutaFill.backtrackversion2.last.table;
+    });
+    boutaFill.queue=boutaFill.backtrackversion2.last.queue;
+    boutaFill.backtrackversion2.removeLast();
   }
 
   @override
@@ -586,6 +666,7 @@ class _MainAppState extends State<MainApp> {
                         color: Colors.brown,
                         child: Container(
                           child: FloatingActionButton(
+                            child: Icon(Icons.extension),
                             onPressed: () {
                               createpuzzle();
                             },
@@ -600,6 +681,7 @@ class _MainAppState extends State<MainApp> {
                         color: Colors.brown,
                         child: Container(
                           child: FloatingActionButton(
+                            child: Icon(Icons.extension),
                             onPressed: () {
                               steppuzzle();
                             },
@@ -614,6 +696,22 @@ class _MainAppState extends State<MainApp> {
                         color: Colors.brown,
                         child: Container(
                           child: FloatingActionButton(
+                            child: Icon(Icons.undo),
+                            onPressed: () {
+                              undo(boutaFill);
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        width: 55,
+                        height: 55,
+                        color: Colors.brown,
+                        child: Container(
+                          child: FloatingActionButton(
+                            child: Icon(Icons.help),
                             onPressed: () {
                               testing();
                             },
@@ -707,14 +805,22 @@ class _MainAppState extends State<MainApp> {
                                         ),
                                         onPressed: () {
                                           setState(() {
-                                            cells[Coordinate.x!][Coordinate.y!]
-                                                    .chosen =
-                                                "${index + 1}";
-                                            if (mode == "chosen") {
-                                              cells[Coordinate.x!][Coordinate
-                                                          .y!]
-                                                      .show =
-                                                  "${index + 1}";
+                                            if (mode == "possible"){
+                                              if (cells[Coordinate.x!][Coordinate.y!].possible.contains("${index+1}")){
+                                                cells[Coordinate.x!][Coordinate.y!].possible.remove("${index+1}");
+                                                cells[Coordinate.x!][Coordinate.y!].show = "${cells[Coordinate.x!][Coordinate.y!].possible}";
+                                              }else {
+                                                cells[Coordinate.x!][Coordinate.y!].possible.add("${index+1}");
+                                                cells[Coordinate.x!][Coordinate.y!].show = "${cells[Coordinate.x!][Coordinate.y!].possible}";
+                                              }
+                                            }else if(mode == "answer"){
+                                              boutaFill.backTrack.add(BackTrack("manually inserted", [Coordinate.x!,Coordinate.y!], cells[Coordinate.x!][Coordinate.y!].possible));
+                                              fillrandom(Coordinate.x!, Coordinate.y!);
+                                            } else {
+                                              cells[Coordinate.x!][Coordinate.y!].chosen = "${index + 1}";
+                                              if (mode == "chosen") {
+                                                cells[Coordinate.x!][Coordinate.y!].show = "${index + 1}";
+                                              }
                                             }
                                           });
                                         },
