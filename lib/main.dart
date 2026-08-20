@@ -1,7 +1,4 @@
 // perbaiki temp boutaFill penggunaan nya, arsitektur baru di ubah
-
-import 'dart:collection';
-import 'dart:ffi';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -280,7 +277,7 @@ class _MainAppState extends State<MainApp> {
 
   
 
-  List<dynamic>? checker2(int x,int y, Kosong boutaFill){
+  List<dynamic>? checker2(int x,int y, Kosong boutaFill, {bool doubleElimination = true}){
     List<List<int>> queue = boutaFill.queue;
     int a = (x ~/ 3)*3;
     int b = (y ~/ 3)*3;
@@ -312,8 +309,9 @@ class _MainAppState extends State<MainApp> {
         }
         if(count==1 && queue.contains(retcoordinate) == false){
           print("box checker, vertical");
-          boutaFill.backTrack.add(BackTrack("box checker, vertical", retcoordinate!, cells[retcoordinate[0]][retcoordinate[1]].possible));
-          cells[retcoordinate![0]][retcoordinate[1]].possible=[number];
+          retcoordinate!;
+          boutaFill.backTrack.add(BackTrack("box checker, vertical", retcoordinate, cells[retcoordinate[0]][retcoordinate[1]].possible));
+          cells[retcoordinate[0]][retcoordinate[1]].possible=[number];
           queue.add(retcoordinate);
         }
         count=0;
@@ -336,8 +334,9 @@ class _MainAppState extends State<MainApp> {
         }
         if (count==1 && queue.contains(retcoordinate)== false) {
           print("box checker, horizontal");
-          boutaFill.backTrack.add(BackTrack("box checker, horizontal", retcoordinate!, cells[retcoordinate[0]][retcoordinate[1]].possible));
-          cells[retcoordinate![0]][retcoordinate[1]].possible=[number];
+          retcoordinate!;
+          boutaFill.backTrack.add(BackTrack("box checker, horizontal", retcoordinate, cells[retcoordinate[0]][retcoordinate[1]].possible));
+          cells[retcoordinate[0]][retcoordinate[1]].possible=[number];
           queue.add(retcoordinate);
         }
       }
@@ -437,7 +436,7 @@ class _MainAppState extends State<MainApp> {
           boutaFill.backTrack.add(BackTrack("number possibile Box on $tempco for $k", tempco, cells[tempco[0]][tempco[1]].possible));
           cells[tempco[0]][tempco[1]].possible = [k];
           queue.add(tempco);
-        } else if(countC == 3 || countC == 2){
+        } else if((countC == 3 || countC == 2) && doubleElimination){
           // check horizontal and vertical, if its on the same line or thingy, then its fixed. idea of using the tempco, but rebuilt a lot, combined with seeing the tempc coordinate to see the horizontal and vertical coordinate
           // another idea, make the if to be one like if countc <=3 and >0 or mybe for in in range 3 for that
           int horiCount = 0;
@@ -488,11 +487,162 @@ class _MainAppState extends State<MainApp> {
             }
           }
           boutaFill.backTrack.add(tempBackTrack);
+          checker2(x, y, boutaFill, doubleElimination: false);
         }
       }
-      if (queue.isNotEmpty) {
-        return queue;
+    }
+
+    if (true) {
+      // double possible pair
+      List<List<List<int>>> vertiList = [[],[]];
+      List<List<List<int>>> horiList = [[],[]];
+      List<List<List<int>>> boxList = [[],[]];
+      for (var i = 0; i < 9; i++) {
+        for (int j = 0; j <9; j++){
+          // checking vertically, 01 02 03
+          if (cells[i][j].possible.length == 2 || cells[i][j].possible.length == 3){
+            vertiList[cells[i][j].possible.length-2].add([i,j]);
+          }
+          // checking horizontally, 10 20 30
+          if (cells[j][i].possible.length == 2 || cells[j][i].possible.length == 3){
+            horiList[cells[j][i].possible.length-2].add([j,i]);
+          }
+        }
       }
+      for (var i = a; i < a+3; i++) {
+        for (int j = b; j < b+3; j++){
+          if (cells[i][j].possible.length == 2 || cells[i][j].possible.length == 3){
+            vertiList[cells[i][j].possible.length-2].add([i,j]);
+          }
+        }
+      }
+      
+      dynamic listOfList = [vertiList,horiList,boxList];
+      // for each i, 0 is for vertiList, 1 is for horiList, 2 is for boxList
+      for (int index = 0; index < listOfList.length; index++) {
+        for (var element in listOfList[index]) {
+          // this element is for the 2 and the 3, so first loop is for the possible length of 2 and second for loop is for the possible length of 3
+          // check if there is any cells that have exact same possibility
+
+          // need checking :v i think all of it is wrong :v (not done yet)
+          if (element.length>0) {
+            if(cells[element[0][0]][element[0][1]].possible.length ==2 ){
+              for (int i = 0 ; i <element.length; i++) {
+                for (int j = 0; j < element.length; j++){
+                  if (i != j){
+                    bool kill = true;
+                    for (var e in cells[element[i][0]][element[i][1]].possible) {
+                      if (cells[element[j][0]][element[j][1]].possible.contains(e)==false){
+                        kill = false;
+                      }
+                    }
+                    if (kill) {
+                      print("going to kill possibility cuz of");
+                      print("[${element[i][0]},${element[i][1]}] and [${element[j][0]},${element[j][1]}]");
+                      List<int> coordinate = [x,y];
+                      for (var e in cells[element[i][0]][element[i][1]].possible) {
+                        if (index!=2){
+                          for (var d = 0; d < 9; d++) {
+                            bool remove=true;
+                            if (index == 0){
+                              // vertical
+                              if (d == element[i][1] || d == element[j][1]){
+                                remove=false;
+                              }
+                              coordinate[1] = d; 
+                            }
+                            if (index == 1){
+                              // horizontal
+                              if (d == element[i][0] || d == element[j][0]){
+                                remove=false;
+                              }
+                              coordinate[0] = d; 
+                            }
+                            if (remove){
+                              cells[coordinate[0]][coordinate[1]].possible.remove(e);
+                            }
+                          }
+                        }else{
+                          // box possible
+                          for(int d = a; d<a+2; d++){
+                            for(int e = a; e<a+2; e++){
+                              if(d!=element[i][0]&&e!=element[i][1]&&d!=element[j][0]&&e!=element[j][1]){
+                                cells[d][e].possible.remove(e);
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }else if (cells[element[0][0]][element[0][1]].possible.length == 3){
+              for (int i = 0 ; i <element.length; i++) {
+                for (int j = 0; j < element.length; j++){
+                  for (int k = 0; k< element.length; k++){
+                    if (i != j && i != k && j != k){
+                      bool kill = true;
+                      for (var e in cells[element[i][0]][element[i][1]].possible) {
+                        if (cells[element[j][0]][element[j][1]].possible.contains(e)==false){
+                          kill = false;
+                        }else if (cells[element[k][0]][element[k][1]].possible.contains(e)==false){
+                          kill = false;
+                        }
+                      }
+                      if (kill) {
+                        print("going to kill possibility cuz of");
+                        print("[${element[i][0]},${element[i][1]}] and [${element[j][0]},${element[j][1]}] and [${element[k][0]},${element[k][1]}]");
+                        List<int> coordinate = [x,y];
+
+
+                        // for each possibility (string)
+                        for (var e in cells[element[i][0]][element[i][1]].possible) {
+                          if (index!=2){ //good
+                            for (var d = 0; d < 9; d++) {
+                              bool remove=true;
+                              if (index == 0){
+                                // vertical
+                                if (d == element[i][1] || d == element[j][1] || d == element[k][1]){
+                                  remove=false;
+                                }
+                                coordinate[1] = d; 
+                              }
+                              if (index == 1){
+                                // horizontal
+                                if (d == element[i][0] || d == element[j][0] || d == element[k][1]){
+                                  remove=false;
+                                }
+                                coordinate[0] = d; 
+                              }
+                              if (remove){
+                                cells[coordinate[0]][coordinate[1]].possible.remove(e);
+                              }
+                            }
+                          }else{ //good
+                            // box possible
+                            for(int d = a; d<a+2; d++){
+                              for(int e = a; e<a+2; e++){
+                                if(d!=element[i][0]&&e!=element[i][1]&&d!=element[j][0]&&e!=element[j][1]&&d!=element[k][0]&&e!=element[k][1]){
+                                  cells[d][e].possible.remove(e);
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (queue.isNotEmpty) {
+      return queue;
     }
 
     // nothing catched by the checker 2
